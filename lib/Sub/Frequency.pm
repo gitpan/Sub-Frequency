@@ -15,7 +15,7 @@ our @EXPORT = qw(
 
 our @EXPORT_OK = @EXPORT;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 my %probabilities = (
     'Sub::Frequency::Always'    => 1.00,
@@ -25,63 +25,17 @@ my %probabilities = (
     'Sub::Frequency::Never'     => 0.00,
 );
 
-sub always(&;@) {
-    my ( $code, @rest ) = @_;
-    my $name = 'Sub::Frequency::Always';
-
-    if (wantarray) {
-        return ( bless( $code, $name ), @rest );
-    }
-    else {
-        _exec( $code, $name, @rest );
-    }
-}
-
-sub normally(&;@) {
-    my ( $code, @rest ) = @_;
-    my $name = 'Sub::Frequency::Normally';
-
-    if (wantarray) {
-        return ( bless( $code, $name ), @rest );
-    }
-    else {
-        _exec( $code, $name, @rest );
-    }
-}
-
-sub sometimes(&;@) {
-    my ( $code, @rest ) = @_;
-    my $name = 'Sub::Frequency::Sometimes';
-
-    if (wantarray) {
-        return ( bless( $code, $name ), @rest );
-    }
-    else {
-        _exec( $code, $name, @rest );
-    }
-}
-
-sub rarely(&;@) {
-    my ( $code, @rest ) = @_;
-    my $name = 'Sub::Frequency::Rarely';
-
-    if (wantarray) {
-        return ( bless( $code, $name ), @rest );
-    }
-    else {
-        _exec( $code, $name, @rest );
-    }
-}
-
-sub never(&;@) {
-    my ( $code, @rest ) = @_;
-    my $name = 'Sub::Frequency::Never';
-
-    if (wantarray) {
-        return ( bless( $code, $name ), @rest );
-    }
-    else {
-        _exec( $code, $name, @rest );
+foreach my $name (keys %probabilities) {
+    (my $subname = lc($name)) =~ s/.*:://g;
+    no strict 'refs'; 
+    *$subname = sub (&;@) { 
+         my ( $code, @rest ) = @_;
+        if (wantarray) {
+            return ( bless( $code, $name ), @rest );
+        }
+        else {
+            _exec( $code, $name, @rest );
+        }
     }
 }
 
@@ -138,7 +92,7 @@ Sub::Frequency - Run code blocks according to a given probability
 
     usually {
         # code here will run 75% of the time
-        # 'normally' also works
+        # 'normally' and 'often' also work
     };
 
     sometimes {
@@ -265,6 +219,22 @@ And you can, of course, replace the C<< => >> with a C<,>:
     };
 
 
+=head1 TIP: OFTEN (THIS), ELSE (THAT)
+
+Just chain your probability call with an always() call:
+
+    sometimes {
+        ...
+    } always {
+        ...
+    };
+
+In chained mode, the next function will be called when the first
+isn't (meaning "1 - p" of the times). Adding an C<always()> call
+as that next function will make the remainder part always be
+called, working like an "else" for your probability block..
+
+
 =head1 DIAGNOSTICS
 
 I<< "$foo does not look like a number or a percentage." >>
@@ -289,6 +259,8 @@ Breno G. de Oliveira (garu), C<< <garu at cpan.org> >>
 Tiago Peczenyj (pac-man)
 
 =head1 CONTRIBUTORS
+
+Thiago Rondon (maluco) C<< tbr at cpan.org> >>
 
 Wesley Dal`Col (blabos) C<< <blabos at cpan.org> >>
 
